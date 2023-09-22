@@ -1,0 +1,36 @@
+import openai           #Need to install openai: pip install openai
+import gradio as gr     #Type in terminal: pip install gradio
+
+openai.api_key = "sk-"  # Replace with your key
+
+def predict(message, history):
+    history_openai_format = []
+    for human, assistant in history:
+        history_openai_format.append({"role": "user", "content": human })
+        history_openai_format.append({"role": "assistant", "content":assistant})
+    history_openai_format.append({"role": "user", "content": message})
+
+    response = openai.ChatCompletion.create(
+        model='gpt-3.5-turbo',
+        messages= history_openai_format,         
+        temperature=0.2,
+        stream=True
+    )
+    
+    partial_message = ""
+    for chunk in response:
+        if len(chunk['choices'][0]['delta']) != 0:
+            partial_message = partial_message + chunk['choices'][0]['delta']['content']
+            yield partial_message 
+
+description = "Welcome to Navigo, your personalized travel guide!"
+examples = [["Hello Navigo!"], ["I want to plan a trip to "], ["Suggest cultural places within 500 pounds budget in "]]
+
+gr.ChatInterface(
+                fn=predict,
+
+                title="N A V I G O",
+                description=description,
+                examples=examples,
+                theme='derekzen/stardust'
+            ).queue().launch()
